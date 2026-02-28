@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>極・木製パズル The-T</title>
+    <title>木製パズル The-T プロ</title>
     <style>
         :root {
             --wood-dark: #4e342e;
             --wood-mid: #8d6e63;
-            --wood-light: #efebe9;
             --accent: #ff5722;
+            --bg: #f5f5dc;
         }
 
         body {
             margin: 0;
-            background: #d7ccc8;
+            background: var(--bg);
             font-family: 'Hiragino Sans', sans-serif;
             overflow: hidden;
             touch-action: none;
@@ -23,114 +23,102 @@
             align-items: center;
         }
 
-        /* UIエリア */
         #header {
             width: 100%;
             background: var(--wood-dark);
             color: white;
-            padding: 10px 0;
+            padding: 15px 0;
             text-align: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             z-index: 100;
         }
 
-        .timer-box {
-            font-size: 1.5rem;
+        .instruction {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: #ffccbc;
             font-weight: bold;
-            color: var(--accent);
-            background: #000;
-            display: inline-block;
-            padding: 2px 15px;
-            border-radius: 5px;
-            margin: 5px;
-            min-width: 80px;
         }
 
-        .btn-group { margin-top: 5px; }
+        .timer-box {
+            font-size: 1.2rem;
+            color: var(--accent);
+            background: #000;
+            padding: 2px 10px;
+            border-radius: 4px;
+        }
+
+        .btn-group { margin-top: 10px; }
         .btn {
-            padding: 6px 12px;
-            margin: 0 3px;
+            padding: 6px 10px;
+            margin: 0 2px;
             border: 1px solid #fff;
             border-radius: 4px;
             background: transparent;
             color: white;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
         }
         .btn.active { background: var(--accent); border-color: var(--accent); }
 
-        /* ゲームエリア */
         #stage {
             position: relative;
             width: 100vw;
-            height: calc(100vh - 120px);
-            background: radial-gradient(circle, #f5f5dc 0%, #d7ccc8 100%);
+            height: calc(100vh - 150px);
         }
 
         #target-outline {
             position: absolute;
-            top: 40%;
+            top: 35%;
             left: 50%;
             transform: translate(-50%, -50%);
             width: 200px;
             height: 200px;
-            border: 3px dashed rgba(0,0,0,0.15);
+            border: 3px dashed rgba(0,0,0,0.1);
             pointer-events: none;
         }
 
-        /* ピースの造形 */
         .piece {
             position: absolute;
             cursor: move;
             background: var(--wood-mid);
-            /* よりリアルな木目 */
             background-image: 
                 linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(0,0,0,0.1) 100%),
                 repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(0,0,0,0.05) 21px);
-            box-shadow: 4px 4px 8px rgba(0,0,0,0.4);
+            box-shadow: 3px 3px 6px rgba(0,0,0,0.4);
             transform-origin: center center;
-            transition: outline 0.2s;
+            z-index: 10;
         }
 
-        /* Tパズル専用の4つの形状 */
-        /* P1: 小さな等辺台形 */
+        /* ピース形状定義 */
         #p1 { width: 100px; height: 50px; clip-path: polygon(0% 0%, 100% 0%, 50% 100%, 0% 100%); }
-        /* P2: 大きな台形 */
         #p2 { width: 150px; height: 50px; clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 33% 100%); }
-        /* P3: 不等辺五角形(Tの横棒の一部) */
         #p3 { width: 100px; height: 100px; clip-path: polygon(0% 0%, 100% 0%, 100% 50%, 50% 50%, 0% 100%); }
-        /* P4: 三角形 */
         #p4 { width: 100px; height: 100px; clip-path: polygon(0% 0%, 50% 50%, 0% 100%); }
 
-        /* クリア演出 */
+        .fixed { opacity: 0.8; box-shadow: none; pointer-events: none; }
+
         #overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             z-index: 2000;
             color: gold;
             text-align: center;
             flex-direction: column;
             justify-content: center;
-            padding: 20px;
-        }
-
-        #overlay h2 { font-size: 3rem; margin: 0; animation: bounce 0.5s infinite; }
-
-        @keyframes bounce {
-            from { transform: translateY(0); }
-            to { transform: translateY(-20px); }
         }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div>TIME LEFT</div>
-    <div id="timer" class="timer-box">60</div>
+    <div class="instruction">全てのピースを使ってTの字を作ろう！</div>
+    <div>TIME: <span id="timer" class="timer-box">--</span></div>
     <div class="btn-group">
-        <button class="btn active" id="btn-easy" onclick="changeMode('easy')">初級 (120s)</button>
-        <button class="btn" id="btn-hard" onclick="changeMode('hard')">上級 (45s)</button>
+        <button class="btn" id="btn-beginner" onclick="changeMode('beginner')">超初級</button>
+        <button class="btn active" id="btn-easy" onclick="changeMode('easy')">初級</button>
+        <button class="btn" id="btn-hard" onclick="changeMode('hard')">上級</button>
     </div>
 </div>
 
@@ -143,20 +131,13 @@
 </div>
 
 <div id="overlay">
-    <h2 id="msg-title">SUCCESS!!</h2>
-    <p id="msg-body">あなたは伝説の職人です！</p>
-    <button class="btn" style="background:var(--accent); font-size:1.2rem; padding:15px;" onclick="restart()">NEXT CHALLENGE</button>
+    <h2 id="msg-title"></h2>
+    <p id="msg-body"></p>
+    <button class="btn" style="background:var(--accent); font-size:1.2rem; padding:15px; margin-top:20px;" onclick="restart()">もう一度挑戦！</button>
 </div>
 
 <script>
-    const state = {
-        1: { x: 50, y: 100, r: 0 },
-        2: { x: 200, y: 100, r: 0 },
-        3: { x: 50, y: 250, r: 0 },
-        4: { x: 200, y: 250, r: 0 }
-    };
-
-    // Tの字を構成する正解データ（相対座標）
+    const state = { 1: {x:0,y:0,r:0}, 2: {x:0,y:0,r:0}, 3: {x:0,y:0,r:0}, 4: {x:0,y:0,r:0} };
     const solution = {
         1: { x: 50, y: 0, r: 0 },
         2: { x: 0, y: 50, r: 180 },
@@ -171,13 +152,11 @@
     let offset = { x: 0, y: 0 };
 
     function init() {
-        const pieces = document.querySelectorAll('.piece');
-        pieces.forEach(p => {
-            p.addEventListener('touchstart', startDrag, {passive:false});
+        document.querySelectorAll('.piece').forEach(p => {
+            p.addEventListener('touchstart', e => startDrag(e), {passive:false});
             p.addEventListener('mousedown', startDrag);
-            // ダブルタップで回転
             let lastTap = 0;
-            p.addEventListener('touchend', (e) => {
+            p.addEventListener('touchend', e => {
                 let now = Date.now();
                 if(now - lastTap < 300) rotate(p);
                 lastTap = now;
@@ -185,39 +164,67 @@
             });
             p.addEventListener('dblclick', () => rotate(p));
         });
-
         window.addEventListener('mousemove', doDrag);
         window.addEventListener('touchmove', doDrag, {passive:false});
         window.addEventListener('mouseup', stopDrag);
         
-        startTimer();
-        shuffle();
+        restart();
     }
 
     function changeMode(m) {
         mode = m;
-        document.getElementById('btn-easy').classList.toggle('active', m === 'easy');
-        document.getElementById('btn-hard').classList.toggle('active', m === 'hard');
-        document.getElementById('target-outline').style.opacity = (m === 'easy') ? "1" : "0.05";
+        ['beginner', 'easy', 'hard'].forEach(x => 
+            document.getElementById('btn-'+x).classList.toggle('active', m === x));
+        document.getElementById('target-outline').style.opacity = (m === 'hard') ? "0.05" : "0.1";
         restart();
+    }
+
+    function restart() {
+        document.getElementById('overlay').style.display = 'none';
+        const target = document.getElementById('target-outline').getBoundingClientRect();
+        
+        // 全ピースを画面下方に配置
+        const startY = window.innerHeight - 200;
+        const spacing = window.innerWidth / 4;
+
+        Object.keys(state).forEach((id, i) => {
+            const p = document.querySelector(`[data-id="${id}"]`);
+            p.classList.remove('fixed');
+            
+            // 超初級：ピース3(最大のL字)を正解位置に固定
+            if(mode === 'beginner' && id === "3") {
+                state[id].x = target.left + solution[id].x;
+                state[id].y = target.top + solution[id].y;
+                state[id].r = solution[id].r;
+                p.classList.add('fixed');
+            } else {
+                state[id].x = spacing * i + 10;
+                state[id].y = startY + (Math.random() * 50);
+                state[id].r = Math.floor(Math.random() * 4) * 90;
+            }
+            render(id);
+        });
+
+        timeLeft = (mode === 'hard') ? 45 : 120;
+        startTimer();
     }
 
     function startTimer() {
         clearInterval(timerId);
-        timeLeft = (mode === 'easy') ? 120 : 45;
         updateTimerDisplay();
         timerId = setInterval(() => {
             timeLeft--;
             updateTimerDisplay();
-            if(timeLeft <= 0) gameOver();
+            if(timeLeft <= 0) showEnd("TIME UP", "焦らず、もう一度木のぬくもりを感じましょう。");
         }, 1000);
     }
 
     function updateTimerDisplay() {
-        document.getElementById('timer').innerText = timeLeft;
+        document.getElementById('timer').innerText = timeLeft + "s";
     }
 
     function startDrag(e) {
+        if(e.target.classList.contains('fixed')) return;
         activeP = e.target;
         const pos = e.touches ? e.touches[0] : e;
         const id = activeP.dataset.id;
@@ -238,13 +245,14 @@
 
     function stopDrag() {
         if(activeP) {
-            activeP.style.zIndex = 1;
+            activeP.style.zIndex = 10;
             checkWin();
         }
         activeP = null;
     }
 
     function rotate(p) {
+        if(p.classList.contains('fixed')) return;
         const id = p.dataset.id;
         state[id].r = (state[id].r + 90) % 360;
         render(id);
@@ -256,47 +264,25 @@
         p.style.transform = `translate(${state[id].x}px, ${state[id].y}px) rotate(${state[id].r}deg)`;
     }
 
-    function shuffle() {
-        Object.keys(state).forEach(id => {
-            state[id].x = Math.random() * (window.innerWidth - 100);
-            state[id].y = window.innerHeight * 0.5 + Math.random() * 150;
-            state[id].r = Math.floor(Math.random() * 4) * 90;
-            render(id);
-        });
-    }
-
     function checkWin() {
         const target = document.getElementById('target-outline').getBoundingClientRect();
         let correct = 0;
         Object.keys(solution).forEach(id => {
             const s = solution[id];
-            const curr = state[id];
-            const dx = (curr.x - target.left) - s.x;
-            const dy = (curr.y - target.top) - s.y;
-            if(Math.abs(dx) < 15 && Math.abs(dy) < 15 && (curr.r % 360) === s.r) correct++;
+            const dx = (state[id].x - target.left) - s.x;
+            const dy = (state[id].y - target.top) - s.y;
+            if(Math.abs(dx) < 20 && Math.abs(dy) < 20 && (state[id].r % 360) === s.r) correct++;
         });
-
         if(correct === 4) {
             clearInterval(timerId);
-            showEnd("天才降臨！！", "驚異的なスピードでクリアしました！");
+            showEnd("天才！お見事です！", "木製パズルマスターの称号を授けます。");
         }
-    }
-
-    function gameOver() {
-        clearInterval(timerId);
-        showEnd("TIME UP...", "木の香りに癒やされすぎましたね。");
     }
 
     function showEnd(title, body) {
         document.getElementById('msg-title').innerText = title;
         document.getElementById('msg-body').innerText = body;
         document.getElementById('overlay').style.display = 'flex';
-    }
-
-    function restart() {
-        document.getElementById('overlay').style.display = 'none';
-        shuffle();
-        startTimer();
     }
 
     init();
