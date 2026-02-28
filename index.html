@@ -3,84 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>木製パズル The-T コンプリート版</title>
+    <title>究極の木製パズル The-T</title>
     <style>
         :root {
+            --wood: #8d6e63;
             --wood-dark: #4e342e;
-            --wood-mid: #8d6e63;
             --accent: #ff5722;
             --bg: #f5f5dc;
-            --ui-bg: rgba(78, 52, 46, 0.9);
         }
 
         body {
             margin: 0; padding: 0; background: var(--bg);
-            font-family: 'Hiragino Sans', sans-serif;
-            overflow: hidden; touch-action: none; height: 100vh;
+            font-family: sans-serif; overflow: hidden; touch-action: none; height: 100vh;
             display: flex; flex-direction: column;
         }
 
         #header {
             flex: 0 0 auto; background: var(--wood-dark); color: white;
-            padding: 10px 0; text-align: center; z-index: 100;
+            padding: 10px; text-align: center; z-index: 100;
         }
-        .instruction { font-size: 0.9rem; color: #ffccbc; font-weight: bold; margin-bottom: 5px; }
-        .timer-box { font-size: 1rem; color: var(--accent); background: #000; padding: 2px 8px; border-radius: 4px; }
-        
-        .btn-group { margin-top: 8px; display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
-        .btn { padding: 5px 8px; border: 1px solid #fff; border-radius: 4px; background: transparent; color: white; font-size: 0.7rem; }
-        .btn.active { background: var(--accent); border-color: var(--accent); }
-        .btn-giveup { background: #607d8b; border-color: #607d8b; }
 
         #stage { flex: 1 1 auto; position: relative; width: 100%; overflow: hidden; }
 
+        /* Tのシルエット（正解の大きさ） */
         #target-outline {
-            position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
-            width: 200px; height: 200px; border: 2px dashed rgba(0,0,0,0.15); pointer-events: none;
+            position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
+            width: 160px; height: 200px; /* Tの縦横比 */
+            border: 2px dashed rgba(0,0,0,0.1); pointer-events: none;
         }
 
         .piece {
-            position: absolute; cursor: move; background: var(--wood-mid);
-            background-image: 
-                linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(0,0,0,0.1) 100%),
-                repeating-linear-gradient(0deg, transparent, transparent 15px, rgba(0,0,0,0.05) 16px);
-            box-shadow: 2px 5px 10px rgba(0,0,0,0.4);
-            transform-origin: center center; z-index: 10; scale: 0.85;
-            /* アニメーション用 */
-            transition: transform 0.1s ease-out;
+            position: absolute; cursor: move; background: var(--wood);
+            background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 2px, transparent 2px, transparent 4px);
+            box-shadow: 3px 5px 10px rgba(0,0,0,0.3);
+            transform-origin: 0 0;
+            transition: transform 0.1s;
         }
-        .piece.solving { transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 500; }
+        .piece.answering { transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); z-index: 500; }
 
-        #p1 { width: 100px; height: 50px; clip-path: polygon(0% 0%, 100% 0%, 50% 100%, 0% 100%); }
-        #p2 { width: 150px; height: 50px; clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 33% 100%); }
-        #p3 { width: 100px; height: 100px; clip-path: polygon(0% 0%, 100% 0%, 100% 50%, 50% 50%, 0% 100%); }
-        #p4 { width: 100px; height: 100px; clip-path: polygon(0% 0%, 50% 50%, 0% 100%); }
+        /* The-T 黄金比ピース設計 (40pxを1ユニットとする) */
+        /* P1: 小さな等辺台形 */
+        #p1 { width: 120px; height: 40px; clip-path: polygon(0 0, 120px 0, 80px 40px, 40px 40px); }
+        /* P2: 大きな台形 (これが肝) */
+        #p3 { width: 120px; height: 80px; clip-path: polygon(0 0, 80px 0, 120px 40px, 120px 80px, 0 80px); }
+        /* P3: 歪んだ五角形 */
+        #p2 { width: 80px; height: 120px; clip-path: polygon(0 0, 80px 0, 80px 120px, 40px 80px, 0 80px); }
+        /* P4: 小さな三角形 */
+        #p4 { width: 80px; height: 40px; clip-path: polygon(0 0, 80px 40px, 0 40px); }
 
-        .fixed { opacity: 0.7; pointer-events: none; filter: sepia(0.5) brightness(0.7); }
+        .fixed { opacity: 0.6; pointer-events: none; }
 
-        #footer-guide {
-            flex: 0 0 auto; background: var(--ui-bg); color: #fff;
-            padding: 8px; text-align: center; font-size: 0.75rem;
-            border-top: 2px solid var(--accent); z-index: 100;
+        #footer {
+            flex: 0 0 auto; background: var(--wood-dark); color: white;
+            padding: 10px; text-align: center; font-size: 0.8rem;
         }
-
+        
+        .btn { padding: 6px 12px; margin: 2px; border: 1px solid #fff; border-radius: 4px; background: transparent; color: white; }
+        .btn.active { background: var(--accent); }
+        
         #overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92);
-            z-index: 2000; color: gold; flex-direction: column;
-            justify-content: center; align-items: center; text-align: center;
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            z-index: 2000; color: gold; flex-direction: column; justify-content: center; align-items: center;
         }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div class="instruction">全てのピースを使ってTの字を作ろう！</div>
-    <div>TIME: <span id="timer" class="timer-box">--</span></div>
-    <div class="btn-group">
-        <button class="btn" id="btn-beginner" onclick="changeMode('beginner')">超初級</button>
-        <button class="btn active" id="btn-easy" onclick="changeMode('easy')">初級</button>
-        <button class="btn" id="btn-hard" onclick="changeMode('hard')">上級</button>
-        <button class="btn btn-giveup" onclick="showAnswer()">答えを見る</button>
+    <div style="font-weight:bold; color:#ffccbc;">全てのピースを使って「T」を作ろう</div>
+    <div style="margin: 5px 0;">TIME: <span id="timer">--</span></div>
+    <div>
+        <button class="btn" id="btn-beginner" onclick="setMode('beginner')">超初級</button>
+        <button class="btn active" id="btn-easy" onclick="setMode('easy')">初級</button>
+        <button class="btn" onclick="reveal()">答えを表示</button>
     </div>
 </div>
 
@@ -92,41 +87,38 @@
     <div id="p4" class="piece" data-id="4"></div>
 </div>
 
-<div id="footer-guide">
-    ドラッグ：移動 ／ <b>ダブルタップ：回転</b>
-</div>
+<div id="footer">ドラッグ：移動 ／ ダブルタップ：回転</div>
 
 <div id="overlay">
-    <h2 id="msg-title" style="font-size: 2.5rem; margin: 0;"></h2>
-    <p id="msg-body" style="font-size: 1.1rem; color: #fff; margin: 20px;"></p>
-    <button class="btn" style="background:var(--accent); font-size:1.2rem; padding:12px 30px;" onclick="restart()">もう一度挑戦！</button>
+    <h2 id="win-msg">天才！！</h2>
+    <button class="btn" style="background:var(--accent); font-size:1.2rem; padding:10px 20px;" onclick="reset()">再挑戦</button>
 </div>
 
 <script>
-    const state = { 1: {x:0,y:0,r:0}, 2: {x:0,y:0,r:0}, 3: {x:0,y:0,r:0}, 4: {x:0,y:0,r:0} };
+    const state = { 1:{x:0,y:0,r:0}, 2:{x:0,y:0,r:0}, 3:{x:0,y:0,r:0}, 4:{x:0,y:0,r:0} };
+    
+    // 数学的に正しいTの字の構成 (40pxグリッド)
     const solution = {
-        1: { x: 50, y: 0, r: 0 },
-        2: { x: 0, y: 50, r: 180 },
-        3: { x: 0, y: 0, r: 0 },
-        4: { x: 100, y: 50, r: 180 }
+        1: { x: 20, y: 0, r: 0 },    // 横棒の上側
+        2: { x: 60, y: 80, r: 0 },   // 縦棒の右側
+        3: { x: 20, y: 40, r: 0 },   // 縦棒の左側 + 横棒の下側
+        4: { x: 100, y: 40, r: 0 }   // 横棒の右端
     };
 
-    let timeLeft = 120;
-    let timerId = null;
-    let activeP = null;
     let mode = 'easy';
-    let offset = { x: 0, y: 0 };
-    let isAutoSolving = false;
+    let timer = 120;
+    let timerInt;
+    let activeP = null;
+    let offset = {x:0, y:0};
 
     function init() {
         document.querySelectorAll('.piece').forEach(p => {
             p.addEventListener('touchstart', startDrag, {passive:false});
             p.addEventListener('mousedown', startDrag);
-            let lastTap = 0;
+            let last = 0;
             p.addEventListener('touchend', e => {
-                let now = Date.now();
-                if(now - lastTap < 300) rotate(p);
-                lastTap = now;
+                if(Date.now()-last < 300) rotate(p);
+                last = Date.now();
                 stopDrag();
             });
             p.addEventListener('dblclick', () => rotate(p));
@@ -134,151 +126,109 @@
         window.addEventListener('mousemove', doDrag);
         window.addEventListener('touchmove', doDrag, {passive:false});
         window.addEventListener('mouseup', stopDrag);
-        
-        window.addEventListener('resize', restart);
-        restart();
+        reset();
     }
 
-    function showAnswer() {
-        if (isAutoSolving) return;
-        isAutoSolving = true;
-        clearInterval(timerId);
-
-        const stageRect = document.getElementById('stage').getBoundingClientRect();
-        const targetRect = document.getElementById('target-outline').getBoundingClientRect();
-
-        Object.keys(solution).forEach(id => {
-            const p = document.querySelector(`[data-id="${id}"]`);
-            p.classList.add('solving');
-            
-            state[id].x = targetRect.left + solution[id].x;
-            state[id].y = targetRect.top - stageRect.top + solution[id].y;
-            state[id].r = solution[id].r;
-            
-            render(id);
-        });
-
-        setTimeout(() => {
-            showEnd("なるほど！これが正解か！", "形を覚えたら、もう一度自分で挑戦してみよう。");
-            isAutoSolving = false;
-            document.querySelectorAll('.piece').forEach(p => p.classList.remove('solving'));
-        }, 1000);
-    }
-
-    function changeMode(m) {
+    function setMode(m) {
         mode = m;
-        ['beginner', 'easy', 'hard'].forEach(x => 
-            document.getElementById('btn-'+x).classList.toggle('active', m === x));
-        document.getElementById('target-outline').style.opacity = (m === 'hard') ? "0.05" : "0.15";
-        restart();
+        document.getElementById('btn-beginner').className = m==='beginner'?'btn active':'btn';
+        document.getElementById('btn-easy').className = m==='easy'?'btn active':'btn';
+        reset();
     }
 
-    function restart() {
-        isAutoSolving = false;
-        document.getElementById('overlay').style.display = 'none';
-        const stageRect = document.getElementById('stage').getBoundingClientRect();
-        const targetRect = document.getElementById('target-outline').getBoundingClientRect();
+    function reset() {
+        document.getElementById('overlay').style.display='none';
+        const s = document.getElementById('stage').getBoundingClientRect();
+        const t = document.getElementById('target-outline').getBoundingClientRect();
         
-        const baseY = stageRect.height * 0.55; 
-        const spacing = stageRect.width / 4;
-
         Object.keys(state).forEach((id, i) => {
             const p = document.querySelector(`[data-id="${id}"]`);
-            p.classList.remove('fixed', 'solving');
-            
-            if(mode === 'beginner' && id === "3") {
-                state[id].x = targetRect.left + solution[id].x;
-                state[id].y = targetRect.top - stageRect.top + solution[id].y;
+            p.classList.remove('fixed','answering');
+            if(mode==='beginner' && id==='3') {
+                state[id].x = t.left + solution[id].x;
+                state[id].y = t.top - s.top + solution[id].y;
                 state[id].r = solution[id].r;
                 p.classList.add('fixed');
             } else {
-                state[id].x = (spacing * i) + (spacing / 2) - 50;
-                state[id].y = baseY + (i % 2 === 0 ? 0 : 60);
-                state[id].r = Math.floor(Math.random() * 4) * 90;
+                state[id].x = (s.width/4)*i + 20;
+                state[id].y = s.height - 150;
+                state[id].r = Math.floor(Math.random()*4)*90;
             }
-            render(id);
+            update(id);
         });
-
-        timeLeft = (mode === 'hard') ? 45 : 120;
-        startTimer();
-    }
-
-    function startTimer() {
-        clearInterval(timerId);
-        updateTimerDisplay();
-        timerId = setInterval(() => {
-            timeLeft--;
-            updateTimerDisplay();
-            if(timeLeft <= 0) showEnd("TIME UP", "焦らず、もう一度やってみましょう。");
+        timer = 120;
+        clearInterval(timerInt);
+        timerInt = setInterval(() => {
+            timer--;
+            document.getElementById('timer').innerText = timer + "s";
+            if(timer<=0) { clearInterval(timerInt); alert("Time Up!"); reset(); }
         }, 1000);
     }
 
-    function updateTimerDisplay() {
-        document.getElementById('timer').innerText = timeLeft + "s";
+    function reveal() {
+        const s = document.getElementById('stage').getBoundingClientRect();
+        const t = document.getElementById('target-outline').getBoundingClientRect();
+        Object.keys(solution).forEach(id => {
+            const p = document.querySelector(`[data-id="${id}"]`);
+            p.classList.add('answering');
+            state[id].x = t.left + solution[id].x;
+            state[id].y = t.top - s.top + solution[id].y;
+            state[id].r = solution[id].r;
+            update(id);
+        });
+        setTimeout(() => { document.getElementById('overlay').style.display='flex'; }, 1000);
     }
 
     function startDrag(e) {
-        if(e.target.classList.contains('fixed') || isAutoSolving) return;
+        if(e.target.classList.contains('fixed')) return;
         activeP = e.target;
-        const pos = e.touches ? e.touches[0] : e;
+        const p = e.touches ? e.touches[0] : e;
         const id = activeP.dataset.id;
-        offset.x = pos.clientX - state[id].x;
-        offset.y = pos.clientY - state[id].y;
+        offset.x = p.clientX - state[id].x;
+        offset.y = p.clientY - state[id].y;
         activeP.style.zIndex = 1000;
     }
 
     function doDrag(e) {
         if(!activeP) return;
-        e.preventDefault();
-        const pos = e.touches ? e.touches[0] : e;
+        const p = e.touches ? e.touches[0] : e;
         const id = activeP.dataset.id;
-        state[id].x = pos.clientX - offset.x;
-        state[id].y = pos.clientY - offset.y;
-        render(id);
+        state[id].x = p.clientX - offset.x;
+        state[id].y = p.clientY - offset.y;
+        update(id);
     }
 
     function stopDrag() {
-        if(activeP) {
-            activeP.style.zIndex = 10;
-            checkWin();
-        }
+        if(activeP) { activeP.style.zIndex = 10; check(); }
         activeP = null;
     }
 
     function rotate(p) {
-        if(p.classList.contains('fixed') || isAutoSolving) return;
+        if(p.classList.contains('fixed')) return;
         const id = p.dataset.id;
         state[id].r = (state[id].r + 90) % 360;
-        render(id);
-        checkWin();
+        update(id);
+        check();
     }
 
-    function render(id) {
+    function update(id) {
         const p = document.querySelector(`[data-id="${id}"]`);
         p.style.transform = `translate(${state[id].x}px, ${state[id].y}px) rotate(${state[id].r}deg)`;
     }
 
-    function checkWin() {
-        if (isAutoSolving) return;
-        const stage = document.getElementById('stage').getBoundingClientRect();
-        const target = document.getElementById('target-outline').getBoundingClientRect();
-        let correct = 0;
+    function check() {
+        const s = document.getElementById('stage').getBoundingClientRect();
+        const t = document.getElementById('target-outline').getBoundingClientRect();
+        let ok = 0;
         Object.keys(solution).forEach(id => {
-            const s = solution[id];
-            const dx = (state[id].x - target.left) - s.x;
-            const dy = (state[id].y - (target.top - stage.top)) - s.y;
-            if(Math.abs(dx) < 20 && Math.abs(dy) < 20 && (state[id].r % 360) === s.r) correct++;
+            const dx = (state[id].x - t.left) - solution[id].x;
+            const dy = (state[id].y - (t.top - s.top)) - solution[id].y;
+            if(Math.abs(dx)<15 && Math.abs(dy)<15 && state[id].r % 360 === solution[id].r) ok++;
         });
-        if(correct === 4) {
-            clearInterval(timerId);
-            showEnd("天才！CLEAR！！", "素晴らしいひらめきです！");
+        if(ok===4) {
+            clearInterval(timerInt);
+            document.getElementById('overlay').style.display='flex';
         }
-    }
-
-    function showEnd(title, body) {
-        document.getElementById('msg-title').innerText = title;
-        document.getElementById('msg-body').innerText = body;
-        document.getElementById('overlay').style.display = 'flex';
     }
 
     init();
