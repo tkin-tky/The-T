@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>極・木製パズル The-T</title>
+    <style>
+        :root {
+            --wood-dark: #4e342e;
+            --wood-mid: #8d6e63;
+            --wood-light: #efebe9;
+            --accent: #ff5722;
+        }
+
+        body {
+            margin: 0;
+            background: #d7ccc8;
+            font-family: 'Hiragino Sans', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* UIエリア */
+        #header {
+            width: 100%;
+            background: var(--wood-dark);
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 100;
+        }
+
+        .timer-box {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+            background: #000;
+            display: inline-block;
+            padding: 2px 15px;
+            border-radius: 5px;
+            margin: 5px;
+            min-width: 80px;
+        }
+
+        .btn-group { margin-top: 5px; }
+        .btn {
+            padding: 6px 12px;
+            margin: 0 3px;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            background: transparent;
+            color: white;
+            font-size: 0.8rem;
+        }
+        .btn.active { background: var(--accent); border-color: var(--accent); }
+
+        /* ゲームエリア */
+        #stage {
+            position: relative;
+            width: 100vw;
+            height: calc(100vh - 120px);
+            background: radial-gradient(circle, #f5f5dc 0%, #d7ccc8 100%);
+        }
+
+        #target-outline {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 3px dashed rgba(0,0,0,0.15);
+            pointer-events: none;
+        }
+
+        /* ピースの造形 */
+        .piece {
+            position: absolute;
+            cursor: move;
+            background: var(--wood-mid);
+            /* よりリアルな木目 */
+            background-image: 
+                linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(0,0,0,0.1) 100%),
+                repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(0,0,0,0.05) 21px);
+            box-shadow: 4px 4px 8px rgba(0,0,0,0.4);
+            transform-origin: center center;
+            transition: outline 0.2s;
+        }
+
+        /* Tパズル専用の4つの形状 */
+        /* P1: 小さな等辺台形 */
+        #p1 { width: 100px; height: 50px; clip-path: polygon(0% 0%, 100% 0%, 50% 100%, 0% 100%); }
+        /* P2: 大きな台形 */
+        #p2 { width: 150px; height: 50px; clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 33% 100%); }
+        /* P3: 不等辺五角形(Tの横棒の一部) */
+        #p3 { width: 100px; height: 100px; clip-path: polygon(0% 0%, 100% 0%, 100% 50%, 50% 50%, 0% 100%); }
+        /* P4: 三角形 */
+        #p4 { width: 100px; height: 100px; clip-path: polygon(0% 0%, 50% 50%, 0% 100%); }
+
+        /* クリア演出 */
+        #overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            color: gold;
+            text-align: center;
+            flex-direction: column;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #overlay h2 { font-size: 3rem; margin: 0; animation: bounce 0.5s infinite; }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="header">
+    <div>TIME LEFT</div>
+    <div id="timer" class="timer-box">60</div>
+    <div class="btn-group">
+        <button class="btn active" id="btn-easy" onclick="changeMode('easy')">初級 (120s)</button>
+        <button class="btn" id="btn-hard" onclick="changeMode('hard')">上級 (45s)</button>
+    </div>
+</div>
+
+<div id="stage">
+    <div id="target-outline"></div>
+    <div id="p1" class="piece" data-id="1"></div>
+    <div id="p2" class="piece" data-id="2"></div>
+    <div id="p3" class="piece" data-id="3"></div>
+    <div id="p4" class="piece" data-id="4"></div>
+</div>
+
+<div id="overlay">
+    <h2 id="msg-title">SUCCESS!!</h2>
+    <p id="msg-body">あなたは伝説の職人です！</p>
+    <button class="btn" style="background:var(--accent); font-size:1.2rem; padding:15px;" onclick="restart()">NEXT CHALLENGE</button>
+</div>
+
+<script>
+    const state = {
+        1: { x: 50, y: 100, r: 0 },
+        2: { x: 200, y: 100, r: 0 },
+        3: { x: 50, y: 250, r: 0 },
+        4: { x: 200, y: 250, r: 0 }
+    };
+
+    // Tの字を構成する正解データ（相対座標）
+    const solution = {
+        1: { x: 50, y: 0, r: 0 },
+        2: { x: 0, y: 50, r: 180 },
+        3: { x: 0, y: 0, r: 0 },
+        4: { x: 100, y: 50, r: 180 }
+    };
+
+    let timeLeft = 120;
+    let timerId = null;
+    let activeP = null;
+    let mode = 'easy';
+    let offset = { x: 0, y: 0 };
+
+    function init() {
+        const pieces = document.querySelectorAll('.piece');
+        pieces.forEach(p => {
+            p.addEventListener('touchstart', startDrag, {passive:false});
+            p.addEventListener('mousedown', startDrag);
+            // ダブルタップで回転
+            let lastTap = 0;
+            p.addEventListener('touchend', (e) => {
+                let now = Date.now();
+                if(now - lastTap < 300) rotate(p);
+                lastTap = now;
+                stopDrag();
+            });
+            p.addEventListener('dblclick', () => rotate(p));
+        });
+
+        window.addEventListener('mousemove', doDrag);
+        window.addEventListener('touchmove', doDrag, {passive:false});
+        window.addEventListener('mouseup', stopDrag);
+        
+        startTimer();
+        shuffle();
+    }
+
+    function changeMode(m) {
+        mode = m;
+        document.getElementById('btn-easy').classList.toggle('active', m === 'easy');
+        document.getElementById('btn-hard').classList.toggle('active', m === 'hard');
+        document.getElementById('target-outline').style.opacity = (m === 'easy') ? "1" : "0.05";
+        restart();
+    }
+
+    function startTimer() {
+        clearInterval(timerId);
+        timeLeft = (mode === 'easy') ? 120 : 45;
+        updateTimerDisplay();
+        timerId = setInterval(() => {
+            timeLeft--;
+            updateTimerDisplay();
+            if(timeLeft <= 0) gameOver();
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        document.getElementById('timer').innerText = timeLeft;
+    }
+
+    function startDrag(e) {
+        activeP = e.target;
+        const pos = e.touches ? e.touches[0] : e;
+        const id = activeP.dataset.id;
+        offset.x = pos.clientX - state[id].x;
+        offset.y = pos.clientY - state[id].y;
+        activeP.style.zIndex = 1000;
+    }
+
+    function doDrag(e) {
+        if(!activeP) return;
+        e.preventDefault();
+        const pos = e.touches ? e.touches[0] : e;
+        const id = activeP.dataset.id;
+        state[id].x = pos.clientX - offset.x;
+        state[id].y = pos.clientY - offset.y;
+        render(id);
+    }
+
+    function stopDrag() {
+        if(activeP) {
+            activeP.style.zIndex = 1;
+            checkWin();
+        }
+        activeP = null;
+    }
+
+    function rotate(p) {
+        const id = p.dataset.id;
+        state[id].r = (state[id].r + 90) % 360;
+        render(id);
+        checkWin();
+    }
+
+    function render(id) {
+        const p = document.querySelector(`[data-id="${id}"]`);
+        p.style.transform = `translate(${state[id].x}px, ${state[id].y}px) rotate(${state[id].r}deg)`;
+    }
+
+    function shuffle() {
+        Object.keys(state).forEach(id => {
+            state[id].x = Math.random() * (window.innerWidth - 100);
+            state[id].y = window.innerHeight * 0.5 + Math.random() * 150;
+            state[id].r = Math.floor(Math.random() * 4) * 90;
+            render(id);
+        });
+    }
+
+    function checkWin() {
+        const target = document.getElementById('target-outline').getBoundingClientRect();
+        let correct = 0;
+        Object.keys(solution).forEach(id => {
+            const s = solution[id];
+            const curr = state[id];
+            const dx = (curr.x - target.left) - s.x;
+            const dy = (curr.y - target.top) - s.y;
+            if(Math.abs(dx) < 15 && Math.abs(dy) < 15 && (curr.r % 360) === s.r) correct++;
+        });
+
+        if(correct === 4) {
+            clearInterval(timerId);
+            showEnd("天才降臨！！", "驚異的なスピードでクリアしました！");
+        }
+    }
+
+    function gameOver() {
+        clearInterval(timerId);
+        showEnd("TIME UP...", "木の香りに癒やされすぎましたね。");
+    }
+
+    function showEnd(title, body) {
+        document.getElementById('msg-title').innerText = title;
+        document.getElementById('msg-body').innerText = body;
+        document.getElementById('overlay').style.display = 'flex';
+    }
+
+    function restart() {
+        document.getElementById('overlay').style.display = 'none';
+        shuffle();
+        startTimer();
+    }
+
+    init();
+</script>
+</body>
+</html>
