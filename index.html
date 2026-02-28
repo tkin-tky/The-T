@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>木製パズル The-T プロ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>木製パズル The-T 完全版</title>
     <style>
         :root {
             --wood-dark: #4e342e;
@@ -14,58 +14,50 @@
 
         body {
             margin: 0;
+            padding: 0;
             background: var(--bg);
             font-family: 'Hiragino Sans', sans-serif;
-            overflow: hidden;
+            overflow: hidden; /* スクロール禁止 */
             touch-action: none;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
         }
 
+        /* ヘッダー：画面上部に固定 */
         #header {
-            width: 100%;
+            flex: 0 0 auto;
             background: var(--wood-dark);
             color: white;
-            padding: 15px 0;
+            padding: 10px 0;
             text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
             z-index: 100;
         }
 
-        .instruction {
-            font-size: 1rem;
-            margin-bottom: 8px;
-            color: #ffccbc;
-            font-weight: bold;
-        }
-
-        .timer-box {
-            font-size: 1.2rem;
-            color: var(--accent);
-            background: #000;
-            padding: 2px 10px;
-            border-radius: 4px;
-        }
-
-        .btn-group { margin-top: 10px; }
+        .instruction { font-size: 0.9rem; color: #ffccbc; font-weight: bold; margin-bottom: 5px; }
+        .timer-box { font-size: 1.1rem; color: var(--accent); background: #000; padding: 2px 8px; border-radius: 4px; }
+        .btn-group { margin-top: 8px; }
         .btn {
-            padding: 6px 10px;
+            padding: 5px 8px;
             margin: 0 2px;
             border: 1px solid #fff;
             border-radius: 4px;
             background: transparent;
             color: white;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
         }
         .btn.active { background: var(--accent); border-color: var(--accent); }
 
+        /* メインステージ */
         #stage {
+            flex: 1 1 auto;
             position: relative;
-            width: 100vw;
-            height: calc(100vh - 150px);
+            width: 100%;
+            overflow: hidden;
         }
 
+        /* T字のガイド枠 */
         #target-outline {
             position: absolute;
             top: 35%;
@@ -73,40 +65,45 @@
             transform: translate(-50%, -50%);
             width: 200px;
             height: 200px;
-            border: 3px dashed rgba(0,0,0,0.1);
+            border: 2px dashed rgba(0,0,0,0.1);
             pointer-events: none;
         }
 
+        /* ピース */
         .piece {
             position: absolute;
             cursor: move;
             background: var(--wood-mid);
             background-image: 
                 linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 50%, rgba(0,0,0,0.1) 100%),
-                repeating-linear-gradient(0deg, transparent, transparent 20px, rgba(0,0,0,0.05) 21px);
-            box-shadow: 3px 3px 6px rgba(0,0,0,0.4);
+                repeating-linear-gradient(0deg, transparent, transparent 15px, rgba(0,0,0,0.05) 16px);
+            box-shadow: 2px 4px 6px rgba(0,0,0,0.3);
             transform-origin: center center;
             z-index: 10;
+            /* スマホ向けに少し縮小 */
+            scale: 0.85;
         }
 
-        /* ピース形状定義 */
         #p1 { width: 100px; height: 50px; clip-path: polygon(0% 0%, 100% 0%, 50% 100%, 0% 100%); }
         #p2 { width: 150px; height: 50px; clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 33% 100%); }
         #p3 { width: 100px; height: 100px; clip-path: polygon(0% 0%, 100% 0%, 100% 50%, 50% 50%, 0% 100%); }
         #p4 { width: 100px; height: 100px; clip-path: polygon(0% 0%, 50% 50%, 0% 100%); }
 
-        .fixed { opacity: 0.8; box-shadow: none; pointer-events: none; }
+        .fixed { opacity: 0.7; box-shadow: none; pointer-events: none; filter: brightness(0.8); }
 
+        /* クリア・タイムアップ画面 */
         #overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.9);
             z-index: 2000;
             color: gold;
-            text-align: center;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
         }
     </style>
 </head>
@@ -131,9 +128,9 @@
 </div>
 
 <div id="overlay">
-    <h2 id="msg-title"></h2>
-    <p id="msg-body"></p>
-    <button class="btn" style="background:var(--accent); font-size:1.2rem; padding:15px; margin-top:20px;" onclick="restart()">もう一度挑戦！</button>
+    <h2 id="msg-title" style="font-size: 2.5rem; margin: 0;"></h2>
+    <p id="msg-body" style="font-size: 1.1rem; color: #fff;"></p>
+    <button class="btn" style="background:var(--accent); font-size:1.2rem; padding:12px 30px; margin-top:20px;" onclick="restart()">もう一度遊ぶ</button>
 </div>
 
 <script>
@@ -153,7 +150,7 @@
 
     function init() {
         document.querySelectorAll('.piece').forEach(p => {
-            p.addEventListener('touchstart', e => startDrag(e), {passive:false});
+            p.addEventListener('touchstart', startDrag, {passive:false});
             p.addEventListener('mousedown', startDrag);
             let lastTap = 0;
             p.addEventListener('touchend', e => {
@@ -168,6 +165,7 @@
         window.addEventListener('touchmove', doDrag, {passive:false});
         window.addEventListener('mouseup', stopDrag);
         
+        window.addEventListener('resize', restart); // 画面回転時などに対応
         restart();
     }
 
@@ -181,25 +179,27 @@
 
     function restart() {
         document.getElementById('overlay').style.display = 'none';
+        const stage = document.getElementById('stage').getBoundingClientRect();
         const target = document.getElementById('target-outline').getBoundingClientRect();
         
-        // 全ピースを画面下方に配置
-        const startY = window.innerHeight - 200;
-        const spacing = window.innerWidth / 4;
+        // ピースを並べるための下部スペースの計算
+        const footerY = stage.height - 120; // 画面下端から120px上に配置
+        const spacing = stage.width / 4;
 
         Object.keys(state).forEach((id, i) => {
             const p = document.querySelector(`[data-id="${id}"]`);
             p.classList.remove('fixed');
             
-            // 超初級：ピース3(最大のL字)を正解位置に固定
             if(mode === 'beginner' && id === "3") {
+                // 正解の位置にセット
                 state[id].x = target.left + solution[id].x;
-                state[id].y = target.top + solution[id].y;
+                state[id].y = target.top - stage.top + solution[id].y;
                 state[id].r = solution[id].r;
                 p.classList.add('fixed');
             } else {
-                state[id].x = spacing * i + 10;
-                state[id].y = startY + (Math.random() * 50);
+                // 画面幅に等間隔で配置
+                state[id].x = (spacing * i) + (spacing / 2) - 50; 
+                state[id].y = footerY;
                 state[id].r = Math.floor(Math.random() * 4) * 90;
             }
             render(id);
@@ -215,7 +215,7 @@
         timerId = setInterval(() => {
             timeLeft--;
             updateTimerDisplay();
-            if(timeLeft <= 0) showEnd("TIME UP", "焦らず、もう一度木のぬくもりを感じましょう。");
+            if(timeLeft <= 0) showEnd("TIME UP", "焦らず、もう一度挑戦しましょう！");
         }, 1000);
     }
 
@@ -261,21 +261,28 @@
 
     function render(id) {
         const p = document.querySelector(`[data-id="${id}"]`);
+        p.style.left = "0px"; // 基準をリセット
+        p.style.top = "0px";
         p.style.transform = `translate(${state[id].x}px, ${state[id].y}px) rotate(${state[id].r}deg)`;
     }
 
     function checkWin() {
+        const stage = document.getElementById('stage').getBoundingClientRect();
         const target = document.getElementById('target-outline').getBoundingClientRect();
         let correct = 0;
         Object.keys(solution).forEach(id => {
             const s = solution[id];
+            // ターゲット座標からの相対位置（Stage基準）
             const dx = (state[id].x - target.left) - s.x;
-            const dy = (state[id].y - target.top) - s.y;
-            if(Math.abs(dx) < 20 && Math.abs(dy) < 20 && (state[id].r % 360) === s.r) correct++;
+            const dy = (state[id].y - (target.top - stage.top)) - s.y;
+            
+            if(Math.abs(dx) < 20 && Math.abs(dy) < 20 && (state[id].r % 360) === s.r) {
+                correct++;
+            }
         });
         if(correct === 4) {
             clearInterval(timerId);
-            showEnd("天才！お見事です！", "木製パズルマスターの称号を授けます。");
+            showEnd("天才！CLEAR！！", "素晴らしい空間把握能力です！");
         }
     }
 
